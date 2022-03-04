@@ -30,11 +30,15 @@ func (s Section) Match(v string) bool {
 	case Standard:
 		return isStandardPackage(v)
 	case Default:
-		return true
+		return false
 	case Prefix:
 		return strings.HasPrefix(v, s.Value)
 	}
 	return false
+}
+
+func (s Section) IsDefault() bool {
+	return s.Type == Default
 }
 
 func (s Section) String() string {
@@ -75,6 +79,15 @@ func extractValue(v string) string {
 func (s *Sections) Set(v string) error {
 	*s = append(*s, ParseSection(v))
 	return nil
+}
+
+func (s Sections) DefaultIndex() int {
+	for i, section := range s {
+		if section.IsDefault() {
+			return i
+		}
+	}
+	return -1
 }
 
 var (

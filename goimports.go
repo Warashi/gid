@@ -59,7 +59,7 @@ func newText(fset *token.FileSet, groups [][]*ast.ImportSpec) []byte {
 
 func run(pass *analysis.Pass) (interface{}, error) {
 	inspect := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
-		if len(sections) == 0 {
+	if len(sections) == 0 {
 		sections = []Section{
 			{Type: Standard},
 			{Type: Default},
@@ -100,14 +100,17 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	})
 
 	groups := make([][]*ast.ImportSpec, len(sections))
+	defaultIndex := sections.DefaultIndex()
+loop:
 	for _, spec := range imported {
 		path := extractPath(spec)
 		for i, section := range sections {
 			if section.Match(path) {
 				groups[i] = append(groups[i], spec)
-				break
+				continue loop
 			}
 		}
+		groups[defaultIndex] = append(groups[defaultIndex], spec)
 	}
 
 	for _, group := range groups {
@@ -132,7 +135,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	pass.Report(analysis.Diagnostic{
 		Pos:      start,
 		End:      0,
-		Category: "styel",
+		Category: "style",
 		Message:  "",
 		SuggestedFixes: []analysis.SuggestedFix{{
 			Message: "",
