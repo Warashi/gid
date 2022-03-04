@@ -1,10 +1,11 @@
 package a
 
-import (
-	"fmt"
-	"errors"
-	_ "github.com/Warashi/wrapmsg"
+import ( // want `not gid'ed`
 	"a/local-imports"
+	"errors"
+	"fmt"
+
+	_ "github.com/Warashi/wrapmsg"
 )
 
 func init() {

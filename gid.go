@@ -4,7 +4,6 @@ import (
 	"go/ast"
 	"go/printer"
 	"go/token"
-	"log"
 	"math"
 	"sort"
 	"strconv"
@@ -48,15 +47,16 @@ func newText(fset *token.FileSet, groups [][]*ast.ImportSpec) string {
 	}
 
 	var builder strings.Builder
+	cfg := &printer.Config{Mode: printer.TabIndent, Tabwidth: 8, Indent: 1}
 	builder.WriteString("import (\n")
 	for _, spec := range groups[0] {
-		printer.Fprint(&builder, fset, spec)
+		cfg.Fprint(&builder, fset, spec)
 		builder.WriteString("\n")
 	}
 	for _, group := range groups[1:] {
 		builder.WriteString("\n")
 		for _, spec := range group {
-			printer.Fprint(&builder, fset, spec)
+			cfg.Fprint(&builder, fset, spec)
 			builder.WriteString("\n")
 		}
 	}
@@ -106,6 +106,8 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		for _, spec := range decl.Specs {
 			imported = append(imported, spec.(*ast.ImportSpec))
 		}
+		importsPerFile[fileBase] = imports
+		importedPerFile[fileBase] = imported
 	})
 
 	for k := range importsPerFile {
@@ -151,7 +153,6 @@ loop:
 	if len(imports) == 1 && applied == text(pass.Fset, imports[0]) {
 		return
 	}
-	log.Println(len(imports))
 	decl := imports[0]
 	pass.Report(analysis.Diagnostic{
 		Pos:      decl.Pos(),
