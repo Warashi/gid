@@ -12,5 +12,9 @@ import (
 // TestAnalyzer is a test for Analyzer.
 func TestAnalyzer(t *testing.T) {
 	testdata := testutil.WithModules(t, analysistest.TestData(), nil)
-	analysistest.RunWithSuggestedFixes(t, testdata, goimports.Analyzer, "a")
+	analyzer := goimports.Analyzer
+	analyzer.Flags.Set("section", "Standard")
+	analyzer.Flags.Set("section", "Default")
+	analyzer.Flags.Set("section", "Prefix(a)")
+	analysistest.RunWithSuggestedFixes(t, testdata, analyzer, "a")
 }
