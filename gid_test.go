@@ -15,6 +15,6 @@ func TestAnalyzer(t *testing.T) {
 	analyzer := gid.Analyzer
 	analyzer.Flags.Set("section", "Standard")
 	analyzer.Flags.Set("section", "Default")
-	analyzer.Flags.Set("section", "Prefix(a)")
-	analysistest.RunWithSuggestedFixes(t, testdata, analyzer, "a")
+	analyzer.Flags.Set("section", "Prefix(github.com/Warashi/gid/a)")
+	analysistest.RunWithSuggestedFixes(t, testdata, analyzer, "github.com/Warashi/gid/a")
 }

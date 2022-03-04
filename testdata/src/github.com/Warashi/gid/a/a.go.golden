@@ -6,7 +6,7 @@ import (
 
 	_ "github.com/Warashi/wrapmsg"
 
-	"a/local-imports"
+	"github.com/Warashi/gid/a/local-imports"
 )
 
 func init() {

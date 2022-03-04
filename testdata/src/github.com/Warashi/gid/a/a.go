@@ -1,7 +1,7 @@
 package a
 
 import ( // want `not gid'ed`
-	"a/local-imports"
+	"github.com/Warashi/gid/a/local-imports"
 	"errors"
 	"fmt"
 

@@ -1,4 +1,4 @@
-module a
+module github.com/Warashi/gid/a
 
 go 1.17
 
