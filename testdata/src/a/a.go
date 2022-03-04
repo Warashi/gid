@@ -1,11 +1,9 @@
 package a
 
-import ( // want `not gid'ed`
+import (
 	"fmt"
 	"errors"
-
 	_ "github.com/Warashi/wrapmsg"
-
 	"a/local-imports"
 )
 

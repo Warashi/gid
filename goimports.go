@@ -11,8 +11,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/google/go-cmp/cmp"
-	"github.com/k0kubun/pp/v3"
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/passes/inspect"
 	"golang.org/x/tools/go/ast/inspector"
@@ -90,11 +88,13 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	nodeFilter := []ast.Node{
 		(*ast.GenDecl)(nil),
 	}
-
 	var start token.Pos = math.MaxInt
-	var imports []*ast.GenDecl
-	var imported []*ast.ImportSpec
+	importsPerFile := make(map[int][]*ast.GenDecl)
+	importedPerFile := make(map[int][]*ast.ImportSpec)
 	inspect.Preorder(nodeFilter, func(n ast.Node) {
+		fileBase := pass.Fset.File(n.Pos()).Base()
+		imports := importsPerFile[fileBase]
+		imported := importedPerFile[fileBase]
 		decl, ok := n.(*ast.GenDecl)
 		if !ok {
 			return
@@ -110,8 +110,17 @@ func run(pass *analysis.Pass) (interface{}, error) {
 			imported = append(imported, spec.(*ast.ImportSpec))
 		}
 	})
+
+	for k := range importsPerFile {
+		processFile(pass, importsPerFile[k], importedPerFile[k])
+	}
+
+	return nil, nil
+}
+
+func processFile(pass *analysis.Pass, imports []*ast.GenDecl, imported []*ast.ImportSpec) {
 	if len(imports) == 0 {
-		return nil, nil
+		return
 	}
 	uniq := make(map[string]*ast.ImportSpec, len(imports))
 	for _, spec := range imported {
@@ -143,9 +152,9 @@ loop:
 
 	applied := newText(pass.Fset, groups)
 	if len(imports) == 1 && applied == text(pass.Fset, imports[0]) {
-		return nil, nil
+		return
 	}
-	log.Println(cmp.Diff(text(pass.Fset, imports[0]), applied))
+	log.Println(len(imports))
 	decl := imports[0]
 	pass.Report(analysis.Diagnostic{
 		Pos:      decl.Pos(),
@@ -177,6 +186,4 @@ loop:
 			}},
 		})
 	}
-
-	return nil, nil
 }
