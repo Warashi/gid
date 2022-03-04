@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/Warashi/goimports-custom"
+	"github.com/Warashi/gid"
 
 	"golang.org/x/tools/go/analysis/unitchecker"
 )
 
-func main() { unitchecker.Main(goimports.Analyzer) }
+func main() { unitchecker.Main(gid.Analyzer) }

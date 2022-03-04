@@ -1,4 +1,4 @@
-package goimports
+package gid
 
 import (
 	"golang.org/x/tools/go/packages"

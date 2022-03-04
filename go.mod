@@ -1,18 +1,14 @@
-module github.com/Warashi/goimports-custom
+module github.com/Warashi/gid
 
 go 1.17
 
 require (
-	github.com/google/go-cmp v0.5.2
 	github.com/gostaticanalysis/testutil v0.4.0
-	github.com/k0kubun/pp/v3 v3.1.0
 	golang.org/x/tools v0.1.9
 )
 
 require (
 	github.com/hashicorp/go-version v1.2.1 // indirect
-	github.com/mattn/go-colorable v0.1.12 // indirect
-	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/otiai10/copy v1.2.0 // indirect
 	github.com/tenntenn/modver v1.0.1 // indirect
 	github.com/tenntenn/text/transform v0.0.0-20200319021203-7eef512accb3 // indirect
