@@ -73,7 +73,7 @@ func ParseSection(v string) Section {
 func extractValue(v string) string {
 	start := strings.Index(v, "(")
 	end := strings.LastIndex(v, ")")
-	return v[start+1:end-1]
+	return v[start+1:end]
 }
 
 func (s *Sections) Set(v string) error {
