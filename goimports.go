@@ -1,7 +1,6 @@
 package goimports
 
 import (
-	"bytes"
 	"go/ast"
 	"go/format"
 	"go/token"
@@ -15,11 +14,11 @@ import (
 	"golang.org/x/tools/go/ast/inspector"
 )
 
-const doc = "goimports-custom is ..."
+const doc = "gid is deterministic goimports"
 
 // Analyzer is ...
 var Analyzer = &analysis.Analyzer{
-	Name: "goimports-custom",
+	Name: "gid",
 	Doc:  doc,
 	Run:  run,
 	Requires: []*analysis.Analyzer{
@@ -35,26 +34,32 @@ func extractPath(spec *ast.ImportSpec) string {
 	return strings.Trim(spec.Path.Value, "`")
 }
 
-func newText(fset *token.FileSet, groups [][]*ast.ImportSpec) []byte {
+func text(fset *token.FileSet, decl *ast.GenDecl) string {
+	var builder strings.Builder
+	ast.Fprint(&builder, fset, decl, nil)
+	return builder.String()
+}
+
+func newText(fset *token.FileSet, groups [][]*ast.ImportSpec) string {
 	if len(groups) == 0 {
-		return []byte("")
+		return ""
 	}
 
-	var buffer bytes.Buffer
-	buffer.WriteString("import (\n")
+	var builder strings.Builder
+	builder.WriteString("import (\n")
 	for _, spec := range groups[0] {
-		format.Node(&buffer, fset, spec)
-		buffer.WriteString("\n")
+		format.Node(&builder, fset, spec)
+		builder.WriteString("\n")
 	}
 	for _, group := range groups[1:] {
-		buffer.WriteString("\n")
+		builder.WriteString("\n")
 		for _, spec := range group {
-			format.Node(&buffer, fset, spec)
-			buffer.WriteString("\n")
+			format.Node(&builder, fset, spec)
+			builder.WriteString("\n")
 		}
 	}
-	buffer.WriteString(")\n")
-	return buffer.Bytes()
+	builder.WriteString(")\n")
+	return builder.String()
 }
 
 func run(pass *analysis.Pass) (interface{}, error) {
@@ -98,6 +103,10 @@ func run(pass *analysis.Pass) (interface{}, error) {
 			imported = append(imported, spec.(*ast.ImportSpec))
 		}
 	})
+	if len(imports) == 0 {
+		return nil, nil
+	}
+	sort.SliceStable(imports, func(i, j int) bool { return imports[i].Pos() < imports[j].Pos() })
 
 	groups := make([][]*ast.ImportSpec, len(sections))
 	defaultIndex := sections.DefaultIndex()
@@ -117,14 +126,34 @@ loop:
 		sort.SliceStable(group, func(i, j int) bool { return extractPath(group[i]) < extractPath(group[j]) })
 	}
 
-	for _, decl := range imports {
+	applied := newText(pass.Fset, groups)
+	if len(imports) == 1 && applied == text(pass.Fset, imports[0]) {
+		return nil, nil
+	}
+	decl := imports[0]
+	pass.Report(analysis.Diagnostic{
+		Pos:      decl.Pos(),
+		End:      decl.End(),
+		Category: "style",
+		Message:  "not gid'ed",
+		SuggestedFixes: []analysis.SuggestedFix{{
+			Message: "apply gdi",
+			TextEdits: []analysis.TextEdit{{
+				Pos:     decl.Pos(),
+				End:     decl.End(),
+				NewText: []byte(applied),
+			}},
+		}},
+	})
+
+	for _, decl := range imports[1:] {
 		pass.Report(analysis.Diagnostic{
 			Pos:      decl.Pos(),
 			End:      decl.End(),
 			Category: "style",
-			Message:  "",
+			Message:  "not gid'ed",
 			SuggestedFixes: []analysis.SuggestedFix{{
-				Message: "",
+				Message: "apply gid",
 				TextEdits: []analysis.TextEdit{{
 					Pos: decl.Pos(),
 					End: decl.End(),
@@ -132,20 +161,6 @@ loop:
 			}},
 		})
 	}
-	pass.Report(analysis.Diagnostic{
-		Pos:      start,
-		End:      0,
-		Category: "style",
-		Message:  "",
-		SuggestedFixes: []analysis.SuggestedFix{{
-			Message: "",
-			TextEdits: []analysis.TextEdit{{
-				Pos:     start,
-				End:     start,
-				NewText: newText(pass.Fset, groups),
-			}},
-		}},
-	})
 
 	return nil, nil
 }
