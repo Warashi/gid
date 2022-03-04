@@ -3,12 +3,16 @@ package goimports
 import (
 	"go/ast"
 	"go/format"
+	"go/printer"
 	"go/token"
+	"log"
 	"math"
 	"sort"
 	"strconv"
 	"strings"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/k0kubun/pp/v3"
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/passes/inspect"
 	"golang.org/x/tools/go/ast/inspector"
@@ -34,10 +38,11 @@ func extractPath(spec *ast.ImportSpec) string {
 	return strings.Trim(spec.Path.Value, "`")
 }
 
-func text(fset *token.FileSet, decl *ast.GenDecl) string {
+func text(fset *token.FileSet, node interface{}) string {
 	var builder strings.Builder
-	ast.Fprint(&builder, fset, decl, nil)
+	printer.Fprint(&builder, fset, node)
 	return builder.String()
+
 }
 
 func newText(fset *token.FileSet, groups [][]*ast.ImportSpec) string {
@@ -48,17 +53,19 @@ func newText(fset *token.FileSet, groups [][]*ast.ImportSpec) string {
 	var builder strings.Builder
 	builder.WriteString("import (\n")
 	for _, spec := range groups[0] {
+		builder.WriteString("\t")
 		format.Node(&builder, fset, spec)
 		builder.WriteString("\n")
 	}
 	for _, group := range groups[1:] {
 		builder.WriteString("\n")
 		for _, spec := range group {
+			builder.WriteString("\t")
 			format.Node(&builder, fset, spec)
 			builder.WriteString("\n")
 		}
 	}
-	builder.WriteString(")\n")
+	builder.WriteString(")")
 	return builder.String()
 }
 
@@ -106,8 +113,16 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	if len(imports) == 0 {
 		return nil, nil
 	}
-	sort.SliceStable(imports, func(i, j int) bool { return imports[i].Pos() < imports[j].Pos() })
+	uniq := make(map[string]*ast.ImportSpec, len(imports))
+	for _, spec := range imported {
+		uniq[text(pass.Fset, spec)] = spec
+	}
+	imported = make([]*ast.ImportSpec, 0, len(uniq))
+	for _, spec := range uniq {
+		imported = append(imported, spec)
+	}
 
+	sort.SliceStable(imports, func(i, j int) bool { return imports[i].Pos() < imports[j].Pos() })
 	groups := make([][]*ast.ImportSpec, len(sections))
 	defaultIndex := sections.DefaultIndex()
 loop:
@@ -130,6 +145,7 @@ loop:
 	if len(imports) == 1 && applied == text(pass.Fset, imports[0]) {
 		return nil, nil
 	}
+	log.Println(cmp.Diff(text(pass.Fset, imports[0]), applied))
 	decl := imports[0]
 	pass.Report(analysis.Diagnostic{
 		Pos:      decl.Pos(),

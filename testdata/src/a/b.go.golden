@@ -1,8 +1,8 @@
 package a
 
-import ( // want `not gid'ed`
-	"fmt"
+import (
 	"errors"
+	"fmt"
 
 	_ "github.com/Warashi/wrapmsg"
 
